@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vrc-osc-chatbox"
+version = "1.0.0"
+description = "VRChat OSC 聊天框消息工具，可显示电脑信息或其他自定义占位符"
+requires-python = ">=3.10"
+dependencies = [
+    "python-osc>=1.8.1",
+    "psutil>=5.9.0",
+    "ttkbootstrap>=1.10.0",
+    "zhdate>=0.1",
+    "cnlunar>=0.2.4",
+]
+
+[project.scripts]
+vrc-osc-chatbox = "vrc_osc_chatbox.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["vrc_osc_chatbox*"]

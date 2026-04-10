@@ -1,0 +1,5 @@
+python-osc>=1.8.1
+psutil>=5.9.0
+ttkbootstrap>=1.10.0
+zhdate>=0.1
+cnlunar>=0.2.4
