@@ -22,3 +22,6 @@ nuitka-crash-report.xml
 .DS_Store
 
 vrc_osc_chatbox_config.json
+app.png
+*.bat
+*.png
