@@ -5,6 +5,7 @@ import re
 import subprocess
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import List
 
 import psutil
@@ -44,6 +45,63 @@ def nvidia_query() -> dict | None:
         }
     except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
         return None
+
+
+_cpu_rapl_prev: tuple[float, int] | None = None
+
+
+# 拓展示例开始
+def cpu_package_power_w() -> str:
+    global _cpu_rapl_prev
+    if platform.system() != "Linux":
+        return "-"
+    ej_path = Path("/sys/class/powercap/intel-rapl:0/energy_uj")
+    if not ej_path.is_file():
+        return "-"
+    now = time.time()
+    try:
+        ej = int(ej_path.read_text().strip())
+    except (ValueError, OSError):
+        return "-"
+    prev = _cpu_rapl_prev
+    _cpu_rapl_prev = (now, ej)
+    if prev is None:
+        return "-"
+    t0, e0 = prev
+    dt = now - t0
+    if dt <= 0:
+        return "-"
+    de = ej - e0
+    if de < 0:
+        de += 0xFFFFFFFF
+    watts = (de / 1_000_000.0) / dt
+    if not (0 <= watts <= 512):
+        return "-"
+    return f"{watts:.1f}W"
+
+
+def nvidia_power_draw_w() -> str:
+    try:
+        r = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=power.draw",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, "CREATE_NO_WINDOW") else 0,
+        )
+        if r.returncode != 0 or not (r.stdout or "").strip():
+            return "-"
+        line = (r.stdout or "").strip().splitlines()[0].strip()
+        if not line or line.upper() in ("[N/A]", "N/A"):
+            return "-"
+        return f"{float(line):.1f}W"
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError, ValueError):
+        return "-"
+# 拓展示例结束
 
 
 def wmi_gpu_name() -> str | None:
